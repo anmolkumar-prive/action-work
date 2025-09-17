@@ -1,0 +1,22 @@
+name: Exploring variable and secrets
+
+on:
+  schedule:
+    -cron:: "/1 * * * *"
+
+env:
+  CONTAINER_REGISTRY: docker.io
+  IMAGE_NAME: github-action-ngnix
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - name:
+      run: echo docker build -t ${{ env.CONTAINER_REGISTRY}}/${{ var.DOCKER_USERNAME }}/$IMAGE_NAME:latest
+
+    - name: Docker login
+      run: echo docker login --username=${{ vars.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD}}
+
+    - name: Docker publish
+      run: echo docker push $CONTAINER_REGISTRY/${{ vars.DOCKER_USERNAME }}/$IMAGE_NAME:latest
