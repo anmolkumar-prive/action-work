@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name:
-      run: echo docker build -t ${{ env.CONTAINER_REGISTRY}}/${{ var.DOCKER_USERNAME }}/$IMAGE_NAME:latest
+      run: echo docker build -t ${{ env.CONTAINER_REGISTRY}}/${{ vars.DOCKER_USERNAME }}/$IMAGE_NAME:latest
 
     - name: Docker login
       run: echo docker login --username=${{ vars.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD}}
