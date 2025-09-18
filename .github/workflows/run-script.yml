@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: action/checkout@4
+        uses: actions/checkout@v4
 
       - name: List files in repo
         run: ls -la
@@ -20,5 +20,3 @@ jobs:
           echo "running script"
           echo "Repo name: $GITHUB_REPOSITORY"
           echo "Current branch: $GITHUB_REF_NAME"
-
-          
