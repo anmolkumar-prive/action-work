@@ -1,0 +1,24 @@
+name: Checkout and  run script
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: action/checkout@4
+
+      - name: List files in repo
+        run: ls -la
+      - name: Run a script custom
+        run : |
+          echo "running script"
+          echo "Repo name: $GITHUB_REPOSITORY"
+          echo "Current branch: $GITHUB_REF_NAME"
+
+          
