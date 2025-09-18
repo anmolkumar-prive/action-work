@@ -20,3 +20,4 @@ jobs:
           echo "running script"
           echo "Repo name: $GITHUB_REPOSITORY"
           echo "Current branch: $GITHUB_REF_NAME"
+
