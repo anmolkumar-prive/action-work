@@ -30,10 +30,7 @@ jobs:
       
       - name: Lint with super linter
         uses: github/super-linter@v5
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_JAVA: true
+        
 
       - name: Build with maven
         run: mvn clean compile
