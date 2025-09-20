@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.10]   # Run job on 3 versions of Python
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]   # Run job on 3 versions of Python
 
     steps:
       - name: Checkout repository
