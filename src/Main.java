@@ -1,9 +1,31 @@
+/**
+ * Utility class for math operations.
+ */
 public class Main {
-    public static int multiply(int a, int b) {
+
+    private Main() {
+        // Prevent instantiation
+    }
+
+    /**
+     * Multiply two integers.
+     *
+     * @param a the first int
+     * @param b the second int
+     * @return result of multiplication
+     */
+    public static int multiply(final int a, final int b) {
         return a * b;
     }
 
-    public static void main(String[] args) {
-        System.out.println("3 * 4 = " + multiply(3, 4));
+    /**
+     * Main method.
+     *
+     * @param args command line arguments
+     */
+    public static void main(final String[] args) {
+        final int num1 = 3;
+        final int num2 = 4;
+        System.out.println(num1 + " * " + num2 + " = " + multiply(num1, num2));
     }
 }

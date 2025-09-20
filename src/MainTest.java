@@ -1,9 +1,20 @@
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
+/**
+ * Tests for Main class.
+ */
 public class MainTest {
+
+    /**
+     * Tests the multiply method.
+     */
     @Test
     public void testMultiply() {
-        assertEquals(12, Main.multiply(3, 4));
+        final int a = 3;
+        final int b = 4;
+        final int expected = 12;
+        assertEquals(expected, Main.multiply(a, b));
     }
 }
