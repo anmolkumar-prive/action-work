@@ -30,10 +30,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Lint with flake8
-        uses: peter-evans/flake8-action@v2
-        with:
-          path: .
+      - name: Run flake8 linter
+        run: flake8 .
 
       - name: Run tests with pytest
         run: pytest
