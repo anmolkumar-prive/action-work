@@ -1,0 +1,52 @@
+name: Python CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  lint-test-build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 .
+
+      - name: Run tests with pytest
+        run: |
+          pip install pytest
+          pytest
+
+      - name: Build package (optional)
+        run: |
+          pip install build
+          python -m build
+
+      - name: Deploy app (only if tests passed)
+        if: success()  # Only runs if all previous steps succeeded
+        run: |
+          echo "Deploying app..."
+          # Insert your deploy commands here, e.g. scp, aws cli, heroku, etc.
+          # Example:
+          # scp dist/myapp.tar.gz user@yourserver:/path/to/deploy
