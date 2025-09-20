@@ -22,12 +22,6 @@ jobs:
           ls -R
         # This step helps you see what files are in your repository
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'  # Cache pip dependencies to speed up future runs
-
       - name: Show Python version
         run: python --version
         # Confirms which Python version is being used
