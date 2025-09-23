@@ -33,18 +33,18 @@ jobs:
             echo "::error ::No release type labels found (major/minor/patch)"
             exit 1
           fi
-
   decide-tags:
     needs: detect
     runs-on: ubuntu-latest
     if: needs.detect.outputs.release-type != ''
+    outputs:
+      new_tag: ${{ steps.decide.outputs.new_tag }}
     steps:
       - name: Decide new tag based on release type
         id: decide
         run: |
           echo "Release type is ${{ needs.detect.outputs.release-type }}"
 
-          # For demo: just echo a version bump message
           case "${{ needs.detect.outputs.release-type }}" in
             major)
               echo "new_tag=v2.0.0" >> $GITHUB_OUTPUT
