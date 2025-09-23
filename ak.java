@@ -1,5 +1,5 @@
 public class ak{
   public static void main(String[] args){
-    System.out.print("anmol kumar");
+    System.out.print("anmol");
   }
 }
