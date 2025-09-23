@@ -1,0 +1,49 @@
+name: Matrix test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-matrix:
+    name: Generate matrix
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.changed-directories.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changed directories matrix
+        id: changed-directories
+        run: |
+          list_changed_directories=$(git diff --diff-filter=d --name-only HEAD^ HEAD ':(exclude)*README.md' | xargs -L1 dirname | uniq | grep -Ev "^\." | sed -e 's/\/templates//;s/\/user-data//;s/\/policies//' | uniq || [[ $? == 1 ]] )
+          echo "Changed directories: $list_changed_directories"
+
+          declare -a matrix_entries
+          for changed_directory in $list_changed_directories;
+          do
+            module_name=$(echo $changed_directory | sed -e "s/\//_/g")
+            matrix_entries+=("{\"module_name\": \"$module_name\", \"module_path\": \"$changed_directory\"}")
+          done
+
+          matrix_json=$(printf ",%s" "${matrix_entries[@]}")
+          matrix_json="[${matrix_json:1}]"
+
+          echo "matrix={\"include\": $matrix_json}" >> $GITHUB_OUTPUT
+          echo "Final matrix: {\"include\": $matrix_json}"
+
+  run-tests:
+    name: Run job for each module
+    needs: generate-matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix).include }}
+    steps:
+      - name: Show module
+        run: |
+          echo "Module: ${{ matrix.module_name }}"
+          echo "Path: ${{ matrix.module_path }}"
