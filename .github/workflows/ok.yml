@@ -1,0 +1,72 @@
+name: Simple Versioning and Comment
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      release-type: ${{ steps.release.outputs.type }}
+    steps:
+      - name: Get all labels in PR
+        id: pr-labels
+        uses: joerick/pr-labels-action@v1.0.9
+
+      - name: Set Release type
+        id: release
+        run: |
+          if [ -n "$GITHUB_PR_LABEL_MAJOR" ]; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif [ -n "$GITHUB_PR_LABEL_MINOR" ]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif [ -n "$GITHUB_PR_LABEL_PATCH" ]; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+          else
+            echo "::error ::No release type labels found (major/minor/patch)"
+            exit 1
+          fi
+
+  decide-tags:
+    needs: detect
+    runs-on: ubuntu-latest
+    if: needs.detect.outputs.release-type != ''
+    steps:
+      - name: Decide new tag based on release type
+        id: decide
+        run: |
+          echo "Release type is ${{ needs.detect.outputs.release-type }}"
+
+          # For demo: just echo a version bump message
+          case "${{ needs.detect.outputs.release-type }}" in
+            major)
+              echo "new_tag=v2.0.0" >> $GITHUB_OUTPUT
+              ;;
+            minor)
+              echo "new_tag=v1.1.0" >> $GITHUB_OUTPUT
+              ;;
+            patch)
+              echo "new_tag=v1.0.1" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "new_tag=v1.0.0" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  comment:
+    needs: decide-tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR with version info
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: |
+            🚀 **Release Type:** ${{ needs.detect.outputs.release-type }}
+            🏷️ **New Tag:** ${{ needs.decide-tags.outputs.new_tag }}
