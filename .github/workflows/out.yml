@@ -40,4 +40,3 @@ jobs:
     steps:
       - name: Show release type
         run: 'echo "This PR was merged and the release type is: ${{ needs.detect.outputs.release-type }}"'
-
