@@ -1,0 +1,86 @@
+name: Test Version Commenting
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  DEFAULT_MODULE_VERSION: "v0.1.0"
+
+jobs:
+  detect:
+    runs-on: ubuntu-22.04
+    outputs:
+      release-type: ${{ steps.release.outputs.type }}
+    steps:
+      - name: Get PR Labels
+        id: pr-labels
+        uses: joerick/pr-labels-action@v1.0.9
+
+      - name: Set Release Type
+        id: release
+        run: |
+          if [[ "${{ steps.pr-labels.outputs.labels }}" == *"major"* ]]; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.pr-labels.outputs.labels }}" == *"minor"* ]]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.pr-labels.outputs.labels }}" == *"patch"* ]]; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+          else
+            echo "type=no-release" >> $GITHUB_OUTPUT
+          fi
+
+  decide-tags:
+    needs: detect
+    if: needs.detect.outputs.release-type != 'no-release'
+    runs-on: ubuntu-22.04
+    outputs:
+      previous_tag: ${{ steps.strip.outputs.tag }}
+      new_tag: ${{ steps.next.outputs[format('{0}', needs.detect.outputs.release-type)] }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get previous tag
+        id: previous
+        uses: WyriHaximus/github-action-get-previous-tag@v1.4.0
+        with:
+          fallback: ${{ env.DEFAULT_MODULE_VERSION }}
+          prefix: test-module
+
+      - name: Strip tag prefix
+        id: strip
+        run: |
+          tag="${{ steps.previous.outputs.tag }}"
+          echo "tag=${tag#test-module-}" >> $GITHUB_OUTPUT
+
+      - name: Get next semver
+        id: next
+        uses: WyriHaximus/github-action-next-semvers@v1.2.1
+        with:
+          version: ${{ steps.strip.outputs.tag }}
+
+  comment:
+    needs: decide-tags
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Generate release comment
+        id: comment
+        run: |
+          echo "# 🔖 Release Plan" >> comment.txt
+          echo "| Module | Previous | New |" >> comment.txt
+          echo "|--------|----------|-----|" >> comment.txt
+          echo "| test-module | ${{ needs.decide-tags.outputs.previous_tag }} | ${{ needs.decide-tags.outputs.new_tag }} |" >> comment.txt
+
+      - name: Comment on PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: comment.txt
+          comment-tag: version_comment
+          mode: recreate
