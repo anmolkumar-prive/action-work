@@ -1,4 +1,4 @@
-name: Simple Versioning and Comment
+name: Detect and Comment Demo
 
 on:
   pull_request:
@@ -10,9 +10,13 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  DEFAULT_MODULE_VERSION: "v0.1.0"
+
 jobs:
   detect:
     runs-on: ubuntu-latest
+    name: "Check labels"
     outputs:
       release-type: ${{ steps.release.outputs.type }}
     steps:
@@ -29,18 +33,22 @@ jobs:
             echo "type=minor" >> $GITHUB_OUTPUT
           elif [ -n "$GITHUB_PR_LABEL_PATCH" ]; then
             echo "type=patch" >> $GITHUB_OUTPUT
+          elif [ -n "$GITHUB_PR_LABEL_NO_RELEASE" ]; then
+            echo "type=no-release" >> $GITHUB_OUTPUT
           else
-            echo "::error ::No release type labels found (major/minor/patch)"
+            echo "::error ::No release type labels found (major/minor/patch/no-release)"
             exit 1
           fi
+
   decide-tags:
     needs: detect
     runs-on: ubuntu-latest
-    if: needs.detect.outputs.release-type != ''
+    name: "Decide Tags"
+    if: needs.detect.outputs.release-type != 'no-release'
     outputs:
       new_tag: ${{ steps.decide.outputs.new_tag }}
     steps:
-      - name: Decide new tag based on release type
+      - name: Decide new tag
         id: decide
         run: |
           echo "Release type is ${{ needs.detect.outputs.release-type }}"
@@ -56,13 +64,14 @@ jobs:
               echo "new_tag=v1.0.1" >> $GITHUB_OUTPUT
               ;;
             *)
-              echo "new_tag=v1.0.0" >> $GITHUB_OUTPUT
+              echo "new_tag=${{ env.DEFAULT_MODULE_VERSION }}" >> $GITHUB_OUTPUT
               ;;
           esac
 
   comment:
-    needs: decide-tags
+    needs: [detect, decide-tags]
     runs-on: ubuntu-latest
+    name: "Comment on PR"
     steps:
       - name: Comment PR with version info
         uses: thollander/actions-comment-pull-request@v3
