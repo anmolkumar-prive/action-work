@@ -1,86 +1,72 @@
-name: Test Version Commenting
+name: Simple Versioning and Comment
 
 on:
   pull_request:
     branches:
       - master
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: write
   pull-requests: write
 
-env:
-  DEFAULT_MODULE_VERSION: "v0.1.0"
-
 jobs:
   detect:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       release-type: ${{ steps.release.outputs.type }}
     steps:
-      - name: Get PR Labels
+      - name: Get all labels in PR
         id: pr-labels
         uses: joerick/pr-labels-action@v1.0.9
 
-      - name: Set Release Type
+      - name: Set Release type
         id: release
         run: |
-          if [[ "${{ steps.pr-labels.outputs.labels }}" == *"major"* ]]; then
+          if [ -n "$GITHUB_PR_LABEL_MAJOR" ]; then
             echo "type=major" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.pr-labels.outputs.labels }}" == *"minor"* ]]; then
+          elif [ -n "$GITHUB_PR_LABEL_MINOR" ]; then
             echo "type=minor" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.pr-labels.outputs.labels }}" == *"patch"* ]]; then
+          elif [ -n "$GITHUB_PR_LABEL_PATCH" ]; then
             echo "type=patch" >> $GITHUB_OUTPUT
           else
-            echo "type=no-release" >> $GITHUB_OUTPUT
+            echo "::error ::No release type labels found (major/minor/patch)"
+            exit 1
           fi
 
   decide-tags:
     needs: detect
-    if: needs.detect.outputs.release-type != 'no-release'
-    runs-on: ubuntu-22.04
-    outputs:
-      previous_tag: ${{ steps.strip.outputs.tag }}
-      new_tag: ${{ steps.next.outputs[format('{0}', needs.detect.outputs.release-type)] }}
+    runs-on: ubuntu-latest
+    if: needs.detect.outputs.release-type != ''
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get previous tag
-        id: previous
-        uses: WyriHaximus/github-action-get-previous-tag@v1.4.0
-        with:
-          fallback: ${{ env.DEFAULT_MODULE_VERSION }}
-          prefix: test-module
-
-      - name: Strip tag prefix
-        id: strip
+      - name: Decide new tag based on release type
+        id: decide
         run: |
-          tag="${{ steps.previous.outputs.tag }}"
-          echo "tag=${tag#test-module-}" >> $GITHUB_OUTPUT
+          echo "Release type is ${{ needs.detect.outputs.release-type }}"
 
-      - name: Get next semver
-        id: next
-        uses: WyriHaximus/github-action-next-semvers@v1.2.1
-        with:
-          version: ${{ steps.strip.outputs.tag }}
+          # For demo: just echo a version bump message
+          case "${{ needs.detect.outputs.release-type }}" in
+            major)
+              echo "new_tag=v2.0.0" >> $GITHUB_OUTPUT
+              ;;
+            minor)
+              echo "new_tag=v1.1.0" >> $GITHUB_OUTPUT
+              ;;
+            patch)
+              echo "new_tag=v1.0.1" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "new_tag=v1.0.0" >> $GITHUB_OUTPUT
+              ;;
+          esac
 
   comment:
     needs: decide-tags
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Generate release comment
-        id: comment
-        run: |
-          echo "# 🔖 Release Plan" >> comment.txt
-          echo "| Module | Previous | New |" >> comment.txt
-          echo "|--------|----------|-----|" >> comment.txt
-          echo "| test-module | ${{ needs.decide-tags.outputs.previous_tag }} | ${{ needs.decide-tags.outputs.new_tag }} |" >> comment.txt
-
-      - name: Comment on PR
+      - name: Comment PR with version info
         uses: thollander/actions-comment-pull-request@v3
         with:
-          file-path: comment.txt
-          comment-tag: version_comment
-          mode: recreate
+          message: |
+            🚀 **Release Type:** ${{ needs.detect.outputs.release-type }}
+            🏷️ **New Tag:** ${{ needs.decide-tags.outputs.new_tag }}
