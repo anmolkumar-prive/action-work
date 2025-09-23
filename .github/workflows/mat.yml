@@ -6,15 +6,18 @@ on:
 
 jobs:
   generate-matrix:
+    name: Generate matrix
     runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.changed-directories.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - id: changed-directories
+      - name: Generate changed directories matrix
+        id: changed-directories
         run: |
           list_changed_directories=$(git diff --diff-filter=d --name-only HEAD^ HEAD ':(exclude)*README.md' | xargs -L1 dirname | uniq | grep -Ev "^\." | sed -e 's/\/templates//;s/\/user-data//;s/\/policies//' | uniq || [[ $? == 1 ]] )
           echo "Changed directories: $list_changed_directories"
@@ -37,7 +40,8 @@ jobs:
     needs: generate-matrix
     runs-on: ubuntu-22.04
     strategy:
-      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix).include }}
+      matrix:
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix).include }}
     steps:
       - name: Show module
         run: |
