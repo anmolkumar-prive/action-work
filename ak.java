@@ -1,5 +1,6 @@
 public class ak{
   public static void main(String[] args){
-    System.out.print("ok");
+    System.out.print("asdsfdgfhgj
+                     ");
   }
 }
